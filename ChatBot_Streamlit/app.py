@@ -1,92 +1,78 @@
-import os
 import streamlit as st
 from google import genai
-from google.genai import types
 
+# ---------------- CONFIGURAÇÕES ---------------- #
 
-def converter_para_gemini(historico):
-    mensagens_gemini = []
-
-    for mensagem in historico:
-        papel = mensagem["role"]
-        conteudo = mensagem["content"]
-
-        if papel == "assistant":
-            papel_gemini = "model"
-        else:
-            papel_gemini = "user"
-
-        mensagens_gemini.append(
-            types.Content(
-                role=papel_gemini,
-                parts=[types.Part.from_text(text=conteudo)]
-            )
-        )
-
-    return mensagens_gemini
-
-
-def gerar_resposta():
-    mensagens = converter_para_gemini(st.session_state.historico)
-
-    if not mensagens:
-        return "Nenhuma mensagem enviada."
-
-    resposta = cliente.models.generate_content(
-        model=MODELO,
-        contents=mensagens,
-        config=types.GenerateContentConfig(
-            system_instruction=INSTRUCAO_SISTEMA,
-            temperature=0.9,
-        )
-    )
-
-    return resposta.text
-
-
-MODELO = "gemini-2.5-flash"
+MODELO = "gemini-2.0-flash"
 
 INSTRUCAO_SISTEMA = """
 Você é um assistente muito educado e criativo.
 Responda ao usuário de forma justa, direta e que resolva o problema dele.
 """
 
+# ---------------- PÁGINA ---------------- #
+
 st.set_page_config(
     page_title="Chatbot do Ale",
     page_icon="😎"
 )
 
-st.title("Chatbot com Gemini")
+st.title("😎 Chatbot com Gemini")
 
-# Campo para API Key
+# ---------------- API KEY ---------------- #
+
 chave_api = st.sidebar.text_input(
     "Insira sua chave de API",
     type="password"
 )
 
 if not chave_api:
-    st.warning("Você precisa inserir uma chave de API para continuar.")
+    st.warning("Insira sua chave de API para continuar.")
     st.stop()
 
 # Cliente Gemini
 cliente = genai.Client(api_key=chave_api)
 
-# Histórico da conversa
+# ---------------- HISTÓRICO ---------------- #
+
 if "historico" not in st.session_state:
     st.session_state.historico = []
 
-# Exibe mensagens anteriores
+# Mostrar mensagens antigas
 for mensagem in st.session_state.historico:
     with st.chat_message(mensagem["role"]):
         st.markdown(mensagem["content"])
 
-# Entrada do usuário
-entrada_usuario = st.chat_input("Digite sua pergunta:")
+# ---------------- FUNÇÃO ---------------- #
 
-# Processa apenas quando houver mensagem
+def gerar_resposta():
+    try:
+
+        conversa = INSTRUCAO_SISTEMA + "\n\n"
+
+        for msg in st.session_state.historico:
+            if msg["role"] == "user":
+                conversa += f"Usuário: {msg['content']}\n"
+            else:
+                conversa += f"Assistente: {msg['content']}\n"
+
+        resposta = cliente.models.generate_content(
+            model=MODELO,
+            contents=conversa
+        )
+
+        return resposta.text
+
+    except Exception as e:
+        return f"Erro: {e}"
+
+# ---------------- ENTRADA DO USUÁRIO ---------------- #
+
+entrada_usuario = st.chat_input("Digite sua pergunta")
+
 if entrada_usuario:
 
-    # Salva mensagem do usuário
+    # Salvar pergunta
     st.session_state.historico.append(
         {
             "role": "user",
@@ -94,18 +80,18 @@ if entrada_usuario:
         }
     )
 
-    # Exibe mensagem do usuário
+    # Mostrar pergunta
     with st.chat_message("user"):
         st.markdown(entrada_usuario)
 
-    # Gera resposta da IA
+    # Gerar resposta
     with st.chat_message("assistant"):
         with st.spinner("Pensando..."):
             resposta_ia = gerar_resposta()
 
         st.markdown(resposta_ia)
 
-    # Salva resposta no histórico
+    # Salvar resposta
     st.session_state.historico.append(
         {
             "role": "assistant",
