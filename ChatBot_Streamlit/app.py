@@ -64,7 +64,7 @@ def gerar_resposta():
         return resposta.text
 
     except Exception as e:
-        return f"Erro: {e}"
+        return "Desculpe, não consegui responder no momento. Tente novamente em alguns instantes."
 
 # ---------------- ENTRADA DO USUÁRIO ---------------- #
 
