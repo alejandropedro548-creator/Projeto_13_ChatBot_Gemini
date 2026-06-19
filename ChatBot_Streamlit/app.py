@@ -64,7 +64,7 @@ def gerar_resposta():
         return resposta.text
 
     except Exception:
-        return "Desculpe, não consegui responder no momento. Tente novamente em alguns instantes."
+        return "Desculpe, alta demanda. Tente novamente em alguns instantes."
 
 # ---------------- ENTRADA DO USUÁRIO ---------------- #
 
